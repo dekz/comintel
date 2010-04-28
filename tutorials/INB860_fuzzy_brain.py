@@ -17,7 +17,16 @@ from pyrobot.brain import Brain
 
 import math
 import random
-from INB860_fuzzy_Sugeno import SugenoFuzzyRuler
+from SugenoFuzzyRuler import SugenoFuzzyRuler
+
+
+# A simple fuzzy rule system written for INB860
+# send comments to f.maire@qut.edu.au
+# Last modified 2010-04-02 at 10am
+#
+
+
+
 
 class FuzzySugenoBrain(Brain):
    """
