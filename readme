@@ -1,0 +1,11 @@
+Write a “fuzzy wall follow” fuzzy controller to get the robot to follow a wall (around corners and around door openings).  
+
+Write a “search red” exploratory random behavior such that the robot stops when it finds a red light.  
+
+Write a “search blue double” exploratory random behavior such that the robot stops when it is in a room with two blue lights.  
+
+Write a “backpacker” behavior such that when the robot is started near the outer wall, it makes a tour of the outer wall and stops approximately where it started.  
+
+Same as Task 4, but this time you are not allowed to use the compass.  
+
+Write a “search and rescue” behavior such that when the robot is started near the outer wall, it searches for the room with the two blue lights. Once it finds the room, the robot should return to its starting position, displays a message, then go back again to the room with two blue lights using a short path.  
