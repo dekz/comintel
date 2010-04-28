@@ -1,6 +1,6 @@
-Write a “fuzzy wall follow” fuzzy controller to get the robot to follow a wall (around corners and around door openings).  
+Write a “fuzzy wall follow” fuzzy controller to get the robot to follow a wall (around corners and around door openings).  -- Jacob
 
-Write a “search red” exploratory random behavior such that the robot stops when it finds a red light.  
+Write a “search red” exploratory random behavior such that the robot stops when it finds a red light.  --Nathan
 
 Write a “search blue double” exploratory random behavior such that the robot stops when it is in a room with two blue lights.  
 
