@@ -38,31 +38,55 @@ class FuzzySugenoBrain(Brain):
       self.D_LARGE = (0.6,0.7,100,100) # distance large fuzzy set
       self.D_SMALL = (0,0,0.1,0.3) # distance small fuzzy set
       #Rules for rotation then translation
+      self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_SMALL), ('and','minLeftSide',self.D_SMALL) , ('and','minFront',self.D_SMALL)] , 0.8) )
+      self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_LARGE), ('and','minLeftSide',self.D_LARGE) , ('and','minFront',self.D_OK)] , 0.2) )
+      self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_LARGE), ('and','minLeftSide',self.D_LARGE) , ('and','minFront',self.D_LARGE)] , 0.2) )
+      self.sfr_trans.addRule( ( [ (None,'minRightSide',self.D_LARGE), ('and','minLeftSide',self.D_LARGE), ('and','minFront',self.D_LARGE) ] , 0.5) )
+#      self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_OK), ('and','minLeftSide',self.D_OK) , ('and','minFront',self.D_LARGE)] , 0.0) )
+      self.sfr_trans.addRule( ( [ (None,'minFront',self.D_LARGE)], 0.5))
       
-      # wall dist ok and no obstacle =>  go fast
-      # ROT RULE: if minRightSide in (0.2,0.4,0.6,0.7) and s6 in (0.2,0.4,0.6,0.7) and minFront in (0.6,0.7,100,100) then output 0.0
-      # ROT RULE: if minRightSide in (0.2,0.4,0.6,0.7) and s6 in (0.2,0.4,0.6,0.7) and minFront in (0.6,0.7,100,100) then output 1
-      self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_OK), ('and','s6',self.D_OK) , ('and','minFront',self.D_LARGE)] , 0.0) )
-      self.sfr_trans.addRule( ( [ (None,'minRightSide',self.D_OK), ('and','s6',self.D_OK), ('and','minFront',self.D_LARGE) ] , 1) )
-      # too close to wall  => turn left
-      self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_SMALL) ] , 0.3) )
-      self.sfr_trans.addRule( ( [ (None,'minRightSide',self.D_SMALL) ] , 0.3) )
-      # too far => turn right
-      self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_LARGE) ] , -0.3) )
-      self.sfr_trans.addRule( ( [ (None,'minRightSide',self.D_LARGE) ] , 0.3) )
-      # obstacle => turn left
-      self.sfr_rot.addRule( ( [ (None,'minFront',self.D_SMALL) ] , 1) )
-      self.sfr_trans.addRule( ( [ (None,'minFront',self.D_SMALL) ] , 0.05) )
-      self.sfr_rot.addRule( ( [ (None,'minFront',self.D_OK) ] , 0.8) )
-      self.sfr_trans.addRule( ( [ (None,'minFront',self.D_OK) ] , 0.1) )
-      # s5 large and s6 ok => turn a bit right
-      self.sfr_rot.addRule( ( [ (None,'s5',self.D_LARGE), ('and','s6',self.D_OK) ] , -0.2) )
-      self.sfr_trans.addRule( ( [ (None,'s5',self.D_LARGE), ('and','s6',self.D_OK) ] , 0.2) )
-      # s5 large and s6 ok => turn a bit right
-      self.sfr_rot.addRule( ( [ (None,'s5',self.D_LARGE), ('and','s6',self.D_LARGE) ] , -0.9) )
-      self.sfr_trans.addRule( ( [ (None,'s5',self.D_LARGE), ('and','s6',self.D_LARGE) ] , 0.1) )
-          
+      
+   #   self.sfr_rot.addRule( ( [ (None,'minLeftSide',self.D_OK), ('and','minRightSide',self.D_LARGE)], 0.2))
+    #  self.sfr_trans.addRule( ( [ (None,'minLeftSide',self.D_OK), ('and','minRightSide',self.D_LARGE)], 0.4))
+    #  self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_OK), ('and','minLeftSide',self.D_LARGE)], -0.2))
+    #  self.sfr_trans.addRule( ( [ (None,'minRightSide',self.D_OK), ('and','minLeftSide',self.D_LARGE)], 0.4))
+      
+      #FRONT
+         #Too close
+            #Left Corner
+      self.sfr_rot.addRule( ( [ (None,'minFront',self.D_OK), ('and','minRightSide',self.D_OK)], 0.9))
+      self.sfr_trans.addRule( ( [ (None,'minFront',self.D_OK), ('and','minRightSide',self.D_OK)], 0.2))
+      self.sfr_rot.addRule( ( [ (None,'minFront',self.D_OK), ('and','minRightSide',self.D_SMALL)], 0.9))
+      self.sfr_trans.addRule( ( [ (None,'minFront',self.D_OK), ('and','minRightSide',self.D_SMALL)], 0.2))
+            #Right Corner
+      self.sfr_rot.addRule( ( [ (None,'minFront',self.D_OK), ('and','minLeftSide',self.D_OK)], -0.9))
+      self.sfr_trans.addRule( ( [ (None,'minFront',self.D_OK), ('and','minLeftSide',self.D_OK)], 0.2))
+      self.sfr_rot.addRule( ( [ (None,'minFront',self.D_OK), ('and','minLeftSide',self.D_SMALL)], -0.9))
+      self.sfr_trans.addRule( ( [ (None,'minFront',self.D_OK), ('and','minLeftSide',self.D_SMALL)], 0.2))
+      
+         #dead end
+      self.sfr_rot.addRule( ( [ (None,'minFront',self.D_SMALL), ('and','minLeftSide',self.D_SMALL) , ('and','minRightSide',self.D_SMALL)] , 0.9) )
+     # self.sfr_trans.addRule( ( [ (None,'minFront',self.D_SMALL), ('and','minLeftSide',self.D_SMALL) , ('and','minRightSide',self.D_SMALL)] , -0.4) )
 
+      #Left
+         #Too close
+      self.sfr_rot.addRule( ( [ (None,'minLeftSide',self.D_SMALL)], -0.4))
+      self.sfr_trans.addRule(( [ (None,'minLeftSide',self.D_SMALL)], 0.2))
+      #Right
+         #Too Close
+      self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_SMALL)], 0.4))
+      self.sfr_trans.addRule(([ (None,'minRightSide',self.D_SMALL)], 0.2))
+      
+      #Wall following
+      #Left | Wall ending
+      self.sfr_rot.addRule( ( [ (None,'s0',self.D_OK), ('and','s2',self.D_LARGE)], 0.9))
+      self.sfr_trans.addRule( ( [ (None,'s0',self.D_OK), ('and','s2',self.D_LARGE)], 0.3))
+      #Right | Wall ending
+      self.sfr_rot.addRule( ( [ (None,'s5',self.D_LARGE), ('and','s7',self.D_OK)], -0.9))
+      self.sfr_trans.addRule( ( [ (None,'s5',self.D_LARGE), ('and','s7',self.D_OK)], 0.3))
+      
+      
+      
    def step(self):
       """
          Step function called at each iteration of the simulator.
@@ -70,11 +94,13 @@ class FuzzySugenoBrain(Brain):
       # Gather sensor values
       self.sonar_sense()
       # create a dict of inputs for the fuzzy rules
-      dx = {'minRightSide':min(self.sv[5:10]),'minFront':min(self.sv[3:5]),\
-            's5':self.sv[5]*1.60,'s6':self.sv[6]*1.10} # normalize sonar 5 and 6
+      #dx = {'minRightSide':min(self.sv[5:10]),'minFront':min(self.sv[3:5]),'minLeftSide':min(self.sv[0:5]),\
+      #      's5':self.sv[5]*1.60,'s6':self.sv[6]*1.1, 's1':self.sv[1]*1.10,'s2':self.sv[2]*1.6} # normalize sonar 5 and 6
+      dx = {'minRightSide':min(self.sv[5:10]),'minFront':min(self.sv[3:5]),'minLeftSide':min(self.sv[0:4]),\
+            's0':self.sv[0],'s2':self.sv[1], 's5':self.sv[6],'s7':self.sv[7]} # normalize sonar 5 and 6
       t_speed = self.sfr_trans.output(dx,False)   # to display debug information pass 'True' instead of 'False'
       r_speed = self.sfr_rot.output(dx,False)  # to display debug information pass 'True' instead of 'False'
-      print '(t_speed, r_speed) = ({0:.2f},{1:.2f})'.format(t_speed, r_speed)
+      #print '(t_speed, r_speed) = ({0:.2f},{1:.2f})'.format(t_speed, r_speed)
       self.robot.move(t_speed, r_speed)
 
 
@@ -85,6 +111,7 @@ class FuzzySugenoBrain(Brain):
          of minDist.
       """
       self.sv = [s.distance() for s in self.robot.range]
+      #print self.sv
 
 
 
