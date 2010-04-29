@@ -38,19 +38,72 @@ class FuzzySugenoBrain(Brain):
       self.D_LARGE = (0.6,0.7,100,100) # distance large fuzzy set
       self.D_SMALL = (0,0,0.1,0.3) # distance small fuzzy set
       #Rules for rotation then translation
+      self.setRules()
+      self.states = {'followLeft': self.followLeft,\
+                     'wander': self.wander,\
+                     'followRight': self.followRight}
+      self.state = 'wander'
+      
+      
+      
+   def step(self):
+      self.sonar_sense()
+      self.getState()
+      t_speed, r_speed = self.states[self.state]()
+      self.robot.move(t_speed, r_speed)
+      print self.state
+
+
+
+   def sonar_sense(self):
+      self.sv = [s.distance() for s in self.robot.range]
+      #print self.sv
+
+   def getState(self):
+      if ( 0.2 <= self.sv[0] <= 0.8) and ( 0.8 <= self.sv[1] <= 100) :
+         #print 'wall ending on left side'
+         self.state = 'followLeft'
+         return
+      if ( 0.2 <= self.sv[7] <= 0.8) and ( 0.8 <= self.sv[6] <= 100) :
+         #print 'wall ending on right side'
+         self.state = 'followRight'
+         return
+      if (self.state == 'followLeft') and not (0.1 <= self.sv[0] <= 0.7):
+         #print 'I was following left and now my first sensor is large'
+         self.state = 'followLeft'
+         return
+      if (self.state == 'followRight') and not (0.1 <= self.sv[7] <= 0.7):
+         self.state = 'followRight'
+         #print 'I was following right and now my last sensor is large'
+         return
+
+      self.state = 'wander'
+      
+      
+   def followLeft(self):
+      #print 'going left'
+      return 0.4, 0.8
+   
+   def followRight(self):
+      #print 'going right'
+      return 0.4, -0.8
+   
+   def wander(self):
+      self.sonar_sense()
+      dx = {'minRightSide':min(self.sv[5:10]),'minFront':min(self.sv[3:5]),'minLeftSide':min(self.sv[0:4]),\
+            's0':self.sv[0],'s2':self.sv[1], 's5':self.sv[6],'s7':self.sv[7]}
+      t_speed = self.sfr_trans.output(dx,False)   # to display debug information pass 'True' instead of 'False'
+      r_speed = self.sfr_rot.output(dx,False)  # to display debug information pass 'True' instead of 'False'
+      #print '(t_speed, r_speed) = ({0:.2f},{1:.2f})'.format(t_speed, r_speed)
+      return t_speed, r_speed
+
+   def setRules(self):
       self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_SMALL), ('and','minLeftSide',self.D_SMALL) , ('and','minFront',self.D_SMALL)] , 0.8) )
       self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_LARGE), ('and','minLeftSide',self.D_LARGE) , ('and','minFront',self.D_OK)] , 0.2) )
       self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_LARGE), ('and','minLeftSide',self.D_LARGE) , ('and','minFront',self.D_LARGE)] , 0.2) )
       self.sfr_trans.addRule( ( [ (None,'minRightSide',self.D_LARGE), ('and','minLeftSide',self.D_LARGE), ('and','minFront',self.D_LARGE) ] , 0.5) )
-#      self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_OK), ('and','minLeftSide',self.D_OK) , ('and','minFront',self.D_LARGE)] , 0.0) )
       self.sfr_trans.addRule( ( [ (None,'minFront',self.D_LARGE)], 0.5))
-      
-      
-   #   self.sfr_rot.addRule( ( [ (None,'minLeftSide',self.D_OK), ('and','minRightSide',self.D_LARGE)], 0.2))
-    #  self.sfr_trans.addRule( ( [ (None,'minLeftSide',self.D_OK), ('and','minRightSide',self.D_LARGE)], 0.4))
-    #  self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_OK), ('and','minLeftSide',self.D_LARGE)], -0.2))
-    #  self.sfr_trans.addRule( ( [ (None,'minRightSide',self.D_OK), ('and','minLeftSide',self.D_LARGE)], 0.4))
-      
+
       #FRONT
          #Too close
             #Left Corner
@@ -63,7 +116,7 @@ class FuzzySugenoBrain(Brain):
       self.sfr_trans.addRule( ( [ (None,'minFront',self.D_OK), ('and','minLeftSide',self.D_OK)], 0.2))
       self.sfr_rot.addRule( ( [ (None,'minFront',self.D_OK), ('and','minLeftSide',self.D_SMALL)], -0.9))
       self.sfr_trans.addRule( ( [ (None,'minFront',self.D_OK), ('and','minLeftSide',self.D_SMALL)], 0.2))
-      
+
          #dead end
       self.sfr_rot.addRule( ( [ (None,'minFront',self.D_SMALL), ('and','minLeftSide',self.D_SMALL) , ('and','minRightSide',self.D_SMALL)] , 0.9) )
      # self.sfr_trans.addRule( ( [ (None,'minFront',self.D_SMALL), ('and','minLeftSide',self.D_SMALL) , ('and','minRightSide',self.D_SMALL)] , -0.4) )
@@ -76,44 +129,14 @@ class FuzzySugenoBrain(Brain):
          #Too Close
       self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_SMALL)], 0.4))
       self.sfr_trans.addRule(([ (None,'minRightSide',self.D_SMALL)], 0.2))
-      
+
       #Wall following
       #Left | Wall ending
-      self.sfr_rot.addRule( ( [ (None,'s0',self.D_OK), ('and','s2',self.D_LARGE)], 0.9))
-      self.sfr_trans.addRule( ( [ (None,'s0',self.D_OK), ('and','s2',self.D_LARGE)], 0.3))
+      self.sfr_rot.addRule( ( [ (None,'s0',self.D_OK), ('and','s2',self.D_LARGE)], 0.99))
+      self.sfr_trans.addRule( ( [ (None,'s0',self.D_OK), ('and','s2',self.D_LARGE)], 0.1))
       #Right | Wall ending
-      self.sfr_rot.addRule( ( [ (None,'s5',self.D_LARGE), ('and','s7',self.D_OK)], -0.9))
-      self.sfr_trans.addRule( ( [ (None,'s5',self.D_LARGE), ('and','s7',self.D_OK)], 0.3))
-      
-      
-      
-   def step(self):
-      """
-         Step function called at each iteration of the simulator.
-      """
-      # Gather sensor values
-      self.sonar_sense()
-      # create a dict of inputs for the fuzzy rules
-      #dx = {'minRightSide':min(self.sv[5:10]),'minFront':min(self.sv[3:5]),'minLeftSide':min(self.sv[0:5]),\
-      #      's5':self.sv[5]*1.60,'s6':self.sv[6]*1.1, 's1':self.sv[1]*1.10,'s2':self.sv[2]*1.6} # normalize sonar 5 and 6
-      dx = {'minRightSide':min(self.sv[5:10]),'minFront':min(self.sv[3:5]),'minLeftSide':min(self.sv[0:4]),\
-            's0':self.sv[0],'s2':self.sv[1], 's5':self.sv[6],'s7':self.sv[7]} # normalize sonar 5 and 6
-      t_speed = self.sfr_trans.output(dx,False)   # to display debug information pass 'True' instead of 'False'
-      r_speed = self.sfr_rot.output(dx,False)  # to display debug information pass 'True' instead of 'False'
-      #print '(t_speed, r_speed) = ({0:.2f},{1:.2f})'.format(t_speed, r_speed)
-      self.robot.move(t_speed, r_speed)
-
-
-
-   def sonar_sense(self):
-      """
-         Compute the sonar vector self.sv, its minimum self.minDist and the index
-         of minDist.
-      """
-      self.sv = [s.distance() for s in self.robot.range]
-      #print self.sv
-
-
+      self.sfr_rot.addRule( ( [ (None,'s5',self.D_LARGE), ('and','s7',self.D_OK)], -0.99))
+      self.sfr_trans.addRule( ( [ (None,'s5',self.D_LARGE), ('and','s7',self.D_OK)], 0.1))
 
 # ---------------- Do not change the code below (part of the framework) --------------------
 def INIT(engine):
