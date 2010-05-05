@@ -26,7 +26,7 @@ class Simpleton(Brain):
                                  'rightPoseToWall':self.wall_follow,\
                                  'nearWall': self.approach_obstacle,\
                                  'nearCorner': self.followCorner,\
-                                 'chaseRedLight':self.chaseRedLight}
+                                 'chaseBlueLight':self.chaseBlueLight}
       self.state = 'lost'
       
       pass
@@ -52,7 +52,7 @@ class Simpleton(Brain):
       #print "compass : ",self.compassRead()
     
 
-    def chaseRedLight(self):
+    def chaseBlueLight(self):
       print "Chasing Blue Light"  
       i_left,rgb_left = self.lightDetectorRead("left")
       i_right,rgb_right = self.lightDetectorRead("right")
@@ -113,7 +113,7 @@ class Simpleton(Brain):
       i_right,rgb_right = self.lightDetectorRead("right")
 
       if (rgb_left[2]>0 or rgb_right[2]>0) and (rgb_right[1] < 1) and (rgb_left[1] < 1):
-          self.state = 'chaseRedLight'
+          self.state = 'chaseBlueLight'
           return
                   
       if self.state=='inNiche':
