@@ -51,7 +51,7 @@ class FuzzySugenoBrain(Brain):
       self.getState()
       t_speed, r_speed = self.states[self.state]()
       self.robot.move(t_speed, r_speed)
-      print self.state
+     # print self.state
 
 
 
@@ -90,37 +90,41 @@ class FuzzySugenoBrain(Brain):
    
    def wander(self):
       self.sonar_sense()
-      dx = {'minRightSide':min(self.sv[5:10]),'minFront':min(self.sv[3:5]),'minLeftSide':min(self.sv[0:4]),\
+      dx = {'minRightSide':min(self.sv[5:10]),'maxFront':max(self.sv[3:5]), 'minFront':min(self.sv[3:5]),'minLeftSide':min(self.sv[0:4]),'maxRightSide':max(self.sv[5:10]), 'maxLeftSide':max(self.sv[0:4]),\
             's0':self.sv[0],'s2':self.sv[1], 's5':self.sv[6],'s7':self.sv[7]}
       t_speed = self.sfr_trans.output(dx,False)   # to display debug information pass 'True' instead of 'False'
       r_speed = self.sfr_rot.output(dx,False)  # to display debug information pass 'True' instead of 'False'
-      #print '(t_speed, r_speed) = ({0:.2f},{1:.2f})'.format(t_speed, r_speed)
+      print '(t_speed, r_speed) = ({0:.2f},{1:.2f})'.format(t_speed, r_speed)
       return t_speed, r_speed
 
    def setRules(self):
-      self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_SMALL), ('and','minLeftSide',self.D_SMALL) , ('and','minFront',self.D_SMALL)] , 0.8) )
-      self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_LARGE), ('and','minLeftSide',self.D_LARGE) , ('and','minFront',self.D_OK)] , 0.2) )
+      #self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_SMALL), ('and','minLeftSide',self.D_SMALL) , ('and','minFront',self.D_SMALL)] , 0.8) )
+      #self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_LARGE), ('and','minLeftSide',self.D_LARGE) , ('and','minFront',self.D_OK)] , 0.2) )
+      #self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_LARGE), ('and','minLeftSide',self.D_LARGE) , ('and','minFront',self.D_LARGE)] , 0.2) )
+      #self.sfr_trans.addRule( ( [ (None,'minRightSide',self.D_LARGE), ('and','minLeftSide',self.D_LARGE), ('and','minFront',self.D_LARGE) ] , 0.5) )
       self.sfr_rot.addRule( ( [ (None,'minRightSide',self.D_LARGE), ('and','minLeftSide',self.D_LARGE) , ('and','minFront',self.D_LARGE)] , 0.2) )
       self.sfr_trans.addRule( ( [ (None,'minRightSide',self.D_LARGE), ('and','minLeftSide',self.D_LARGE), ('and','minFront',self.D_LARGE) ] , 0.5) )
       self.sfr_trans.addRule( ( [ (None,'minFront',self.D_LARGE)], 0.5))
+      self.sfr_rot.addRule( ( [ (None,'minFront',self.D_LARGE)], 0.0))
 
-      #FRONT
-         #Too close
-            #Left Corner
-      self.sfr_rot.addRule( ( [ (None,'minFront',self.D_OK), ('and','minRightSide',self.D_OK)], 0.9))
-      self.sfr_trans.addRule( ( [ (None,'minFront',self.D_OK), ('and','minRightSide',self.D_OK)], 0.2))
-      self.sfr_rot.addRule( ( [ (None,'minFront',self.D_OK), ('and','minRightSide',self.D_SMALL)], 0.9))
-      self.sfr_trans.addRule( ( [ (None,'minFront',self.D_OK), ('and','minRightSide',self.D_SMALL)], 0.2))
-            #Right Corner
-      self.sfr_rot.addRule( ( [ (None,'minFront',self.D_OK), ('and','minLeftSide',self.D_OK)], -0.9))
-      self.sfr_trans.addRule( ( [ (None,'minFront',self.D_OK), ('and','minLeftSide',self.D_OK)], 0.2))
-      self.sfr_rot.addRule( ( [ (None,'minFront',self.D_OK), ('and','minLeftSide',self.D_SMALL)], -0.9))
-      self.sfr_trans.addRule( ( [ (None,'minFront',self.D_OK), ('and','minLeftSide',self.D_SMALL)], 0.2))
 
-         #dead end
-      self.sfr_rot.addRule( ( [ (None,'minFront',self.D_SMALL), ('and','minLeftSide',self.D_SMALL) , ('and','minRightSide',self.D_SMALL)] , 0.9) )
-     # self.sfr_trans.addRule( ( [ (None,'minFront',self.D_SMALL), ('and','minLeftSide',self.D_SMALL) , ('and','minRightSide',self.D_SMALL)] , -0.4) )
-
+      #wall in front
+      self.sfr_rot.addRule(([(None, 'minFront', self.D_SMALL), ('and', 'maxRightSide', self.D_LARGE), ('and', 'maxLeftSide', self.D_LARGE)], 0.9))
+      self.sfr_trans.addRule(([(None, 'minFront', self.D_SMALL), ('and', 'maxRightSide', self.D_LARGE), ('and', 'maxLeftSide', self.D_LARGE)], 0.1))
+      self.sfr_rot.addRule(([(None, 'minFront', self.D_OK), ('and', 'maxRightSide', self.D_LARGE), ('and', 'maxLeftSide', self.D_LARGE)], 0.9))
+      self.sfr_trans.addRule(([(None, 'minFront', self.D_OK), ('and', 'maxRightSide', self.D_LARGE), ('and', 'maxLeftSide', self.D_LARGE)], 0.1))
+      #Wall on right and front
+      self.sfr_rot.addRule(([(None, 'minFront', self.D_SMALL), ('and', 'maxRightSide', self.D_OK), ('and', 'maxLeftSide', self.D_LARGE)], 0.9))
+      self.sfr_trans.addRule(([(None, 'minFront', self.D_SMALL), ('and', 'maxRightSide', self.D_OK), ('and', 'maxLeftSide', self.D_LARGE)], 0.1))
+      self.sfr_rot.addRule(([(None, 'minFront', self.D_OK), ('and', 'maxRightSide', self.D_OK), ('and', 'maxLeftSide', self.D_LARGE)], 0.9))
+      self.sfr_trans.addRule(([(None, 'minFront', self.D_OK), ('and', 'maxRightSide', self.D_OK), ('and', 'maxLeftSide', self.D_LARGE)], 0.1))
+      #wall on left and front
+      self.sfr_rot.addRule(([(None, 'minFront', self.D_SMALL), ('and', 'maxLeftSide', self.D_OK), ('and', 'maxRightSide', self.D_LARGE)], -0.9))
+      self.sfr_trans.addRule(([(None, 'minFront', self.D_SMALL), ('and', 'maxLeftSide', self.D_OK), ('and', 'maxRightSide', self.D_LARGE)], 0.1))
+      self.sfr_rot.addRule(([(None, 'minFront', self.D_OK), ('and', 'maxLeftSide', self.D_OK), ('and', 'maxRightSide', self.D_LARGE)], -0.9))
+      self.sfr_trans.addRule(([(None, 'minFront', self.D_OK), ('and', 'maxLeftSide', self.D_OK), ('and', 'maxRightSide', self.D_LARGE)], 0.1))
+      
+      
       #Left
          #Too close
       self.sfr_rot.addRule( ( [ (None,'minLeftSide',self.D_SMALL)], -0.4))
@@ -132,9 +136,13 @@ class FuzzySugenoBrain(Brain):
 
       #Wall following
       #Left | Wall ending
+      self.sfr_rot.addRule( ( [ (None,'s0',self.D_SMALL), ('and','s2',self.D_LARGE)], 0.99))
+      self.sfr_trans.addRule( ( [ (None,'s0',self.D_SMALL), ('and','s2',self.D_LARGE)], 0.1))
       self.sfr_rot.addRule( ( [ (None,'s0',self.D_OK), ('and','s2',self.D_LARGE)], 0.99))
       self.sfr_trans.addRule( ( [ (None,'s0',self.D_OK), ('and','s2',self.D_LARGE)], 0.1))
       #Right | Wall ending
+      self.sfr_rot.addRule( ( [ (None,'s5',self.D_LARGE), ('and','s7',self.D_SMALL)], -0.99))
+      self.sfr_trans.addRule( ( [ (None,'s5',self.D_LARGE), ('and','s7',self.D_SMALL)], 0.1))
       self.sfr_rot.addRule( ( [ (None,'s5',self.D_LARGE), ('and','s7',self.D_OK)], -0.99))
       self.sfr_trans.addRule( ( [ (None,'s5',self.D_LARGE), ('and','s7',self.D_OK)], 0.1))
 
@@ -142,5 +150,5 @@ class FuzzySugenoBrain(Brain):
 def INIT(engine):
    if engine.robot.type not in ['K-Team', 'Pyrobot']:
       raise "Robot should have light sensors!"
-   return FuzzySugenoBrain('roach_1', engine)
+   return FuzzySugenoBrain('2010_INB860_Brain_0', engine)
       
