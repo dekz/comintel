@@ -7,6 +7,7 @@ WARNING: compass not reliable if you move the robot with the mouse
 """
 
 from pyrobot.brain import Brain, avg
+from time import *
 
 import math
 import random
@@ -38,9 +39,10 @@ class Simpleton(Brain):
       self.sonar_sense()
       # Determine current state
       self.determine_state()
-      print "state = ", self.state
+      #print "state = ", self.state
       t_speed,r_speed = self.state_behavior_map[self.state]()
       self.robot.move(t_speed, r_speed)
+      #self.robot.move(0.0, 0.2)
 
 
 
@@ -51,25 +53,56 @@ class Simpleton(Brain):
      # print i_left,rgb_left, i_right,rgb_right, heading
       #print "compass : ",self.compassRead()
     
-
+    #rotate until we are in line with a blue light then drive directly ontop of it    
+    def goToLight(self):
+       i_left,rgb_left = self.lightDetectorRead("left")
+       i_right,rgb_right = self.lightDetectorRead("right")
+       print "Rotating to Light"
+       while(i_right < 0.10 and i_left < 0.10):
+          i_left,rgb_left = self.lightDetectorRead("left")
+          i_right,rgb_right = self.lightDetectorRead("right")
+          if (i_right > i_left):
+             self.robot.move(0.0, 0.1)
+          else:
+             self.robot.move(0.0, -0.1)
+       self.robot.move(0.0, 0.0)
+       
+       print "Moving to light"
+       while(rgb_left[2] >= 250 and rgb_right[2] >= 250):
+          i_left,rgb_left = self.lightDetectorRead("left")
+          i_right,rgb_right = self.lightDetectorRead("right")
+          self.robot.move(0.3, 0.0)
+   
+       self.robot.move(0.0, 0.0)
+       self.robot.move(0.0, 0.2)
+       thr = round(self.robot.simulation[0].getPose(self.robot.name)[2], 2)-0.2
+       print thr
+       heading = round(self.robot.simulation[0].getPose(self.robot.name)[2], 2)
+       print heading
+       while (heading != thr):
+          heading = round(self.robot.simulation[0].getPose(self.robot.name)[2], 2)
+          print heading
+       print "Done rotating"
+    
     def chaseBlueLight(self):
-      print "Chasing Blue Light"  
+      #print "Chasing Blue Light"  
       i_left,rgb_left = self.lightDetectorRead("left")
       i_right,rgb_right = self.lightDetectorRead("right")
       
       BlueLightUpper=rgb_left[2]+1
       BlueLightLower=rgb_left[2]-1
       if rgb_left[2] > 254 and rgb_right[2] > 254:
-          print "found blue light"
+          #print "found blue light"
+          self.goToLight()
           return 0, 0 #at light, wait
       if rgb_left[2] > rgb_right[2]:
-          print "Light Left"
+         # print "Light Left"
           return 0.1, 0.2 #turn left, into light
       if rgb_right[2] > rgb_left[2]:
-          print "Light Right"
+         # print "Light Right"
           return 0.1, -0.2 #turn right, into light
       if BlueLightUpper > rgb_left[2] > BlueLightLower:
-          print "Light Straight"
+         # print "Light Straight"
           return 0.4, 0
       
           
@@ -186,7 +219,7 @@ class Simpleton(Brain):
          Wall follow right hand
       """
       if self.targetDist-0.2<self.minDist<self.targetDist+0.2:
-         print "forward"
+         #print "forward"
          return 0.2, 0  # cruise forward
       if self.minDist<self.targetDist-0.2:
          return 0.2, 0.2  # correct to the left   
@@ -201,16 +234,16 @@ class Simpleton(Brain):
          Turn around the corner
       """
       if self.sv[7]>self.targetDist+0.1: # gone past the end of the wall
-            print "followCorner::  spin right"
+            #print "followCorner::  spin right"
             return 0.0, -0.1  # turn right:
       if self.targetDist+0.1>self.sv[7]> self.targetDist-0.1:
-         print "followCorner::  forward right"
+        # print "followCorner::  forward right"
          return 0.1, -0.05  # forward right
       if self.targetDist+0.1<self.sv[7]:
-         print "followCorner:: right"
+        # print "followCorner:: right"
          return 0.1, -0.1  # turn right
       if self.targetDist-0.1>self.sv[7]:
-         print "followCorner:: left"
+        # print "followCorner:: left"
          return 0.1, 0.1  # turn left
       
 
@@ -221,10 +254,10 @@ class Simpleton(Brain):
          This behavior uses a memory (the boolean variable self.hiding)
       """
       if min(self.sv[3:5])<2: # obstacle in front, not looking out of the niche, need to spin
-         print "hide:: spin"
+       #  print "hide:: spin"
          return 0.0, 0.5  # turn left
       else:
-         print "hide:: wait"
+       #  print "hide:: wait"
          return 0,0  # just keep still
 
 
@@ -234,7 +267,7 @@ class Simpleton(Brain):
          Behavior to avoid collision 
       """
       if min(self.sv[1:7])<self.safetyDistance: # obstacle 
-         print "emergency_turn:: spin"
+        # print "emergency_turn:: spin"
          return -0.2, 0.0  # reverse
       else: # behavior not active
          return 0, 0.1
