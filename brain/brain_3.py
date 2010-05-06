@@ -16,11 +16,12 @@ class Simpleton(Brain):
     
     def setup(self):
       self.compassNoiseSigma = 0.05
-
+      self.missionComplete = 0
       self.safetyDistance = 0.15 # tolerated distance to wall
       self.targetDist = 0.4
-      self.lightFound = 0;
-      self.initRotation = 0;
+      self.ignoreLight = 0
+      self.lightFound = 0
+      self.initRotation = 0
       self.state_behavior_map = {'farFromWall':self.wander,\
                                  'lost':self.wander,\
                                  'inNiche': self.hide,\
@@ -31,31 +32,28 @@ class Simpleton(Brain):
                                  'nearCorner': self.followCorner,\
                                  'chaseBlueLight':self.chaseBlueLight,\
                                  'goToLight':self.goToLight,\
-                                 'rotateSearch':self.rotateSearch}
+                                 'rotateSearch':self.rotateSearch,\
+                                 'idle':self.idle}
       self.state = 'lost'
       
       pass
 
     def step(self):
-        
-      #self.test()      
-      # Gather sensor values
+
       self.sonar_sense()
-      # Determine current state
       self.determine_state()
-      #print "state = ", self.state
       t_speed,r_speed = self.state_behavior_map[self.state]()
       self.robot.move(t_speed, r_speed)
-      #self.robot.move(0.0, 0.2)
 
+    def idle(self):
+        return 0.0, 0.0
     
-    #rotate until we are in line with a blue light then drive directly ontop of it    
     def goToLight(self):
        self.lightFound = 1;
-       self.initRotation = round(self.compassRead(), 1)-0.1
+       self.initRotation = round(self.compassRead(), 1)-0.3
        i_left,rgb_left = self.lightDetectorRead("left")
        i_right,rgb_right = self.lightDetectorRead("right")
-       print "Done rotating"
+       print "Set up the rotating... Done"
     
     
     
@@ -82,57 +80,43 @@ class Simpleton(Brain):
       
           
     def rotateSearch(self):
+       i_left,rgb_left = self.lightDetectorRead("left")
+       i_right,rgb_right = self.lightDetectorRead("right")
        heading = round(self.compassRead(), 1)
-       if (heading != self.initRotation):
-          print heading, self.initRotation
-          return 0.0, 0.1
-       else:
-          print "Done turning"
+       if (rgb_left[2] == rgb_right[2] == 0):
+           #we aren't in a room with more than one light detected
+           print "Only one light detected, cool down started"
+           self.lightFound = 0
+           self.ignoreLight = 300
+           return 0.0, 0.0
+       if (heading == self.initRotation):
+          #rotation complete and always lit, must be in a room with 2
+          print "Found Room with 2 Lights"
+          self.missionComplete = 1
           self.lightFound = 0
+          self.ignoreLight = 300
+          print heading, self.initRotation, (rgb_left[2] == rgb_right[2] == 0)
           return 0.0, 0.0
-    
-    def compassRead(self): # THIS FUNCTION SHOULD NOT BE CHANGED
-      """
-         Return a noisy compass heading. North is zero, West if 90, South 180
-         East 270.
-      """
-      ignoredx,ignoredy, th = self.robot.simulation[0].getPose(self.robot.name)
-      return (th+random.gauss(0,self.compassNoiseSigma))%(2*math.pi)
-
-
-
-    def lightDetectorRead(self,side):
-      """
-         Side is either "left" or "right"
-      """
-      ls = self.robot.light[0][side][0] # light sensor on the given side 
-      return ls.value, ls.rgb  # intensity and triplet of [r,g,b] values
-
-
-
-    def sonar_sense(self):
-      """
-         Compute the sonar vector self.sv, its minimum self.minDist and the index
-         of minDist.
-      """
-      self.sv = [s.distance() for s in self.robot.range]
-      self.minDist = min(self.sv)
-      self.iMinDist = self.sv.index(self.minDist)
-        
-
-
-
-
+       else:
+          print heading, self.initRotation, (rgb_left[2] == rgb_right[2] == 0)
+          return 0.0, 0.1
+          
     def determine_state(self):
       """ PRE: self.sonar_sense() has been called """
       
       i_left,rgb_left = self.lightDetectorRead("left")
       i_right,rgb_right = self.lightDetectorRead("right")
-      
+      if (self.ignoreLight > 0):
+         self.ignoreLight -= 1
+         
+      if (self.missionComplete > 0):
+          self.state = 'idle'
+          return
+          
       if (self.lightFound > 0):
          self.state = 'rotateSearch'
          return
-      if (rgb_left[2]>0 or rgb_right[2]>0) and (rgb_right[1] < 1) and (rgb_left[1] < 1):
+      if (rgb_left[2]>0 or rgb_right[2]>0) and (rgb_right[1] < 1) and (rgb_left[1] < 1 and self.ignoreLight < 1):
           self.state = 'chaseBlueLight'
           return
                   
@@ -277,11 +261,23 @@ class Simpleton(Brain):
       else:
          #print "wander:: No obstacle"         
          return 0.2, random.uniform(-1,1)
-
-         
     
-      
+    def compassRead(self): # THIS FUNCTION SHOULD NOT BE CHANGED
+      ignoredx,ignoredy, th = self.robot.simulation[0].getPose(self.robot.name)
+      return (th+random.gauss(0,self.compassNoiseSigma))%(2*math.pi)
 
+
+
+    def lightDetectorRead(self,side):
+      ls = self.robot.light[0][side][0] # light sensor on the given side 
+      return ls.value, ls.rgb  # intensity and triplet of [r,g,b] values
+
+
+
+    def sonar_sense(self):
+      self.sv = [s.distance() for s in self.robot.range]
+      self.minDist = min(self.sv)
+      self.iMinDist = self.sv.index(self.minDist)
 
 def INIT(engine):
        if engine.robot.type not in ['K-Team', 'Pyrobot']:
