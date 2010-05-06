@@ -19,6 +19,8 @@ class Simpleton(Brain):
 
       self.safetyDistance = 0.15 # tolerated distance to wall
       self.targetDist = 0.4
+      self.lightFound = 0;
+      self.initRotation = 0;
       self.state_behavior_map = {'farFromWall':self.wander,\
                                  'lost':self.wander,\
                                  'inNiche': self.hide,\
@@ -27,7 +29,9 @@ class Simpleton(Brain):
                                  'rightPoseToWall':self.wall_follow,\
                                  'nearWall': self.approach_obstacle,\
                                  'nearCorner': self.followCorner,\
-                                 'chaseBlueLight':self.chaseBlueLight}
+                                 'chaseBlueLight':self.chaseBlueLight,\
+                                 'goToLight':self.goToLight,\
+                                 'rotateSearch':self.rotateSearch}
       self.state = 'lost'
       
       pass
@@ -44,45 +48,16 @@ class Simpleton(Brain):
       self.robot.move(t_speed, r_speed)
       #self.robot.move(0.0, 0.2)
 
-
-
-    def test(self):
-      i_left,rgb_left = self.lightDetectorRead("left")
-      i_right,rgb_right = self.lightDetectorRead("right")
-      heading = self.compassRead()
-     # print i_left,rgb_left, i_right,rgb_right, heading
-      #print "compass : ",self.compassRead()
     
     #rotate until we are in line with a blue light then drive directly ontop of it    
     def goToLight(self):
+       self.lightFound = 1;
+       self.initRotation = round(self.compassRead(), 1)-0.1
        i_left,rgb_left = self.lightDetectorRead("left")
        i_right,rgb_right = self.lightDetectorRead("right")
-       print "Rotating to Light"
-       while(i_right < 0.10 and i_left < 0.10):
-          i_left,rgb_left = self.lightDetectorRead("left")
-          i_right,rgb_right = self.lightDetectorRead("right")
-          if (i_right > i_left):
-             self.robot.move(0.0, 0.1)
-          else:
-             self.robot.move(0.0, -0.1)
-       self.robot.move(0.0, 0.0)
-       
-       print "Moving to light"
-       while(rgb_left[2] >= 250 and rgb_right[2] >= 250):
-          i_left,rgb_left = self.lightDetectorRead("left")
-          i_right,rgb_right = self.lightDetectorRead("right")
-          self.robot.move(0.3, 0.0)
-   
-       self.robot.move(0.0, 0.0)
-       self.robot.move(0.0, 0.2)
-       thr = round(self.robot.simulation[0].getPose(self.robot.name)[2], 2)-0.2
-       print thr
-       heading = round(self.robot.simulation[0].getPose(self.robot.name)[2], 2)
-       print heading
-       while (heading != thr):
-          heading = round(self.robot.simulation[0].getPose(self.robot.name)[2], 2)
-          print heading
        print "Done rotating"
+    
+    
     
     def chaseBlueLight(self):
       #print "Chasing Blue Light"  
@@ -106,7 +81,16 @@ class Simpleton(Brain):
           return 0.4, 0
       
           
-
+    def rotateSearch(self):
+       heading = round(self.compassRead(), 1)
+       if (heading != self.initRotation):
+          print heading, self.initRotation
+          return 0.0, 0.1
+       else:
+          print "Done turning"
+          self.lightFound = 0
+          return 0.0, 0.0
+    
     def compassRead(self): # THIS FUNCTION SHOULD NOT BE CHANGED
       """
          Return a noisy compass heading. North is zero, West if 90, South 180
@@ -144,7 +128,10 @@ class Simpleton(Brain):
       
       i_left,rgb_left = self.lightDetectorRead("left")
       i_right,rgb_right = self.lightDetectorRead("right")
-
+      
+      if (self.lightFound > 0):
+         self.state = 'rotateSearch'
+         return
       if (rgb_left[2]>0 or rgb_right[2]>0) and (rgb_right[1] < 1) and (rgb_left[1] < 1):
           self.state = 'chaseBlueLight'
           return
